@@ -3,6 +3,8 @@ import zigpy.types as t
 from zigpy.quirks import CustomDevice, CustomCluster
 from zigpy.zcl.clusters.general import ( PowerConfiguration )
 
+_LOGGER = logging.getLogger(__name__)
+
 
 class SmartthingsPowerCluster(CustomCluster, PowerConfiguration):
     """Provides battery % remaining based on voltage"""
@@ -67,7 +69,7 @@ class SmartthingsMultiSensor(CustomDevice):
     replacement = {
         'endpoints': {
             1: {
-                'input_clusters': [0x0000, SmartthingsPowerCluster, 0x0003, 0x000F, 0x0020, 0x0402, 0x0500, 0xFC02 ]'
+                'input_clusters': [0x0000, SmartthingsPowerCluster, 0x0003, 0x000F, 0x0020, 0x0402, 0x0500, 0xFC02 ],
             }
         }
     }
