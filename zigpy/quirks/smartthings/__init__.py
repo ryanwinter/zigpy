@@ -1,16 +1,21 @@
-import logging
 import zigpy.types as t
+import logging
+
+from zigpy.profiles import PROFILES, zha
+from zigpy.zcl.clusters.general import Basic, PowerConfiguration, Identify, BinaryInput, PollControl, Ota
+from zigpy.zcl.clusters.measurement import TemperatureMeasurement
+from zigpy.zcl.clusters.security import IasZone
 from zigpy.quirks import CustomDevice, CustomCluster
-from zigpy.zcl.clusters.general import ( PowerConfiguration )
 
 _LOGGER = logging.getLogger(__name__)
 
-
-class SmartthingsPowerCluster(CustomCluster, PowerConfiguration):
-    """Provides battery % remaining based on voltage"""
-    minVolts = 15
-    maxVolts = 28
-    values = {
+class SmartthingsPowerConfigurationCluster(CustomCluster, PowerConfiguration):
+    cluster_id = PowerConfiguration.cluster_id
+    BATTERY_VOLTAGE_ATTR = 0x0020
+    BATTERY_PERCENTAGE_REMAINING = 0x0021
+    MIN_VOLTS = 15
+    MAX_VOLTS = 28
+    VOLTS_TO_PERCENT = {
         28: 100,
         27: 100,
         26: 100,
@@ -27,21 +32,25 @@ class SmartthingsPowerCluster(CustomCluster, PowerConfiguration):
         15: 0
     }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def _update_attribute(self, attrid, value):
         super()._update_attribute(attrid, value)
+        if attrid == self.BATTERY_VOLTAGE_ATTR:
+            super()._update_attribute(
+                self.BATTERY_PERCENTAGE_REMAINING,
+                self._calculate_battery_percentage(value)
+            )
 
-        attr_name = self.attributes.get(attrid, [attrid])[0]
-        _LOGGER.debug("smartthings update attribute %s", attr_name)
-        if attr_name == 'battery_voltage':
-            _LOGGER.debug("Found battery voltage %s %s", value)
+    def _calculate_battery_percentage(self, rawValue):
+        volts = rawValue
+        if rawValue < self.MIN_VOLTS:
+            volts = self.MIN_VOLTS
+        elif rawValue > self.MAX_VOLTS:
+            volts = self.MAX_VOLTS
 
-            value = min(value, self.maxVolts)
-            value = max(value, self.minVolts)
-
-            bpr = self.values.get(value, 'unknown')
-            bpr_id = self._attridx.get('battery_percentage_remaining')
-
-            super()._update_attribute(bpr_id, bpr)
+        return self.VOLTS_TO_PERCENT.get(volts, 'unknown')
 
 
 class SmartthingsRelativeHumidityCluster(CustomCluster):
@@ -59,17 +68,40 @@ class SmartthingsRelativeHumidityCluster(CustomCluster):
 class SmartthingsMultiSensor(CustomDevice):
     signature = {
         1: {
-            'profile': 0x104,
-            'device_type': 0x402,
-            'input_clusters': [ 0, 1, 3, 15, 32, 1026, 1280, 64514 ],
-            'output_clusters': [ 25 ],
+            'profile': zha.PROFILE_ID,
+            'device_type': zha.DeviceType.IAS_ZONE,
+            'input_clusters': [ 
+                Basic.cluster_id, 
+                PowerConfiguration.cluster_id, 
+                Identify.cluster_id, 
+                BinaryInput.cluster_id, 
+                PollControl.cluster_id, 
+                TemperatureMeasurement.cluster_id, 
+                IasZone.cluster_id, 
+                64514 
+            ],
+            'output_clusters': [ 
+                Ota.cluster_id 
+            ],
         }
     }
 
     replacement = {
         'endpoints': {
             1: {
-                'input_clusters': [0x0000, SmartthingsPowerCluster, 0x0003, 0x000F, 0x0020, 0x0402, 0x0500, 0xFC02 ],
+                'input_clusters': [
+                    Basic.cluster_id, 
+                    SmartthingsPowerConfigurationCluster                   
+                    Identify.cluster_id, 
+                    BinaryInput.cluster_id, 
+                    PollControl.cluster_id, 
+                    TemperatureMeasurement.cluster_id, 
+                    IasZone.cluster_id, 
+                    0xFC02
+                ],
+                'output_clusters': [
+                    Ota.cluster_id
+                ],
             }
         }
     }
