@@ -38,7 +38,7 @@ class SmartthingsPowerConfigurationCluster(CustomCluster, PowerConfiguration):
     def _update_attribute(self, attrid, value):
         super()._update_attribute(attrid, value)
         if attrid == self.BATTERY_VOLTAGE_ATTR:
-             _LOGGER.debug("Received battery voltage %s", value)
+            _LOGGER.debug("Received battery voltage %s", value)
 
             super()._update_attribute(
                 self.BATTERY_PERCENTAGE_REMAINING,
