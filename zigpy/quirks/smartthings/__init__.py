@@ -91,7 +91,7 @@ class SmartthingsMultiSensor(CustomDevice):
             1: {
                 'input_clusters': [
                     Basic.cluster_id, 
-                    SmartthingsPowerConfigurationCluster                   
+                    SmartthingsPowerConfigurationCluster, 
                     Identify.cluster_id, 
                     BinaryInput.cluster_id, 
                     PollControl.cluster_id, 
