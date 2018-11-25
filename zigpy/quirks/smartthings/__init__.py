@@ -67,6 +67,46 @@ class SmartthingsRelativeHumidityCluster(CustomCluster):
     client_commands = {}
 
 
+class SmartthingsMoisture(CustomDevice):
+    signature = {
+        1: {
+            'profile': zha.PROFILE_ID,
+            'device_type': zha.DeviceType.IAS_ZONE,
+            'input_clusters': [
+                Basic.cluster_id,
+                PowerConfiguration.cluster_id,
+                Identify.cluster_id,
+                BinaryInput.cluster_id,
+                PollControl.cluster_id,
+                TemperatureMeasurement.cluster_id,
+                IasZone.cluster_id
+            ],
+            'output_clusters': [
+                Ota.cluster_id
+            ],
+        }
+    }
+
+    replacement = {
+        'endpoints': {
+            1: {
+                'input_clusters': [
+                    Basic.cluster_id,
+                    SmartthingsPowerConfigurationCluster,
+                    Identify.cluster_id,
+                    BinaryInput.cluster_id,
+                    PollControl.cluster_id,
+                    TemperatureMeasurement.cluster_id,
+                    IasZone.cluster_id
+                ],
+                'output_clusters': [
+                    Ota.cluster_id
+                ],
+            }
+        }
+    }
+
+
 class SmartthingsMultiSensor(CustomDevice):
     signature = {
         1: {
