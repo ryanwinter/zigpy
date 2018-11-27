@@ -108,7 +108,25 @@ class ControllerApplication(zigpy.util.ListenableMixin):
         raise NotImplementedError
 
     def get_sequence(self):
-        self._send_sequence = (self._send_sequence + 1) % 256
+        get_sqn_tries_left = 255
+        while get_sqn_tries_left >= 0:
+            get_sqn_tries_left -= 1
+            self._send_sequence = (self._send_sequence + 1) % 256
+            if self._send_sequence not in self._pending:
+                break
+
+        if get_sqn_tries_left < 254:
+            LOGGER.debug(
+                "Got sqn {} on {} try. current/max pending {}/{} trns".
+                format(
+                    self._send_sequence,
+                    255-get_sqn_tries_left,
+                    len(self._pending), self._max_pending
+                )
+
+            )
+
+        assert get_sqn_tries_left >= 0    
         return self._send_sequence
 
     def get_device(self, ieee=None, nwk=None):
