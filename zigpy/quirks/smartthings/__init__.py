@@ -67,7 +67,7 @@ class SmartthingsRelativeHumidityCluster(CustomCluster):
     client_commands = {}
 
 
-class SmartthingsMoisture(CustomDevice):
+class SmartthingsMoistureMotion(CustomDevice):
     signature = {
         1: {
             'profile': zha.PROFILE_ID,
