@@ -123,6 +123,9 @@ class PersistingListener:
     def _save_device(self, device):
         q = "INSERT OR REPLACE INTO devices (ieee, nwk, status) VALUES (?, ?, ?)"
         self.execute(q, (device.ieee, device.nwk, device.status))
+        if isinstance(device, zigpy.quirks.CustomDevice):
+            self._db.commit()
+            return
         self._save_endpoints(device)
         for epid, ep in device.endpoints.items():
             if epid == 0:
@@ -206,10 +209,6 @@ class PersistingListener:
             ep = dev.endpoints[endpoint_id]
             ep.add_output_cluster(cluster)
 
-        for device in self._application.devices.values():
-            device = zigpy.quirks.get_device(device)
-            self._application.devices[device.ieee] = device
-
         for (ieee, endpoint_id, cluster, attrid, value) in self._scan("attributes"):
             dev = self._application.get_device(ieee)
             if endpoint_id in dev.endpoints:
@@ -220,10 +219,14 @@ class PersistingListener:
                     LOGGER.debug("Attribute id: %s value: %s", attrid, value)
                     if cluster == Basic.cluster_id and attrid == 4:
                         value = value.split(b'\x00')[0]
-                        ep.manufacturer = value.decode('ascii').strip()
+                        ep.manufacturer = value.decode().strip()
                     if cluster == Basic.cluster_id and attrid == 5:
                         value = value.split(b'\x00')[0]
-                        ep.model = value.decode('ascii').strip()
+                        ep.model = value.decode().strip()
+
+        for device in self._application.devices.values():
+            device = zigpy.quirks.get_device(device)
+            self._application.devices[device.ieee] = device
 
 
 class ClusterPersistingListener:
